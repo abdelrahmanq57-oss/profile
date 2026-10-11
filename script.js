@@ -33,22 +33,30 @@
   }), { threshold: 0.15 });
   document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
-  // Contact form: client-side validation, ready for an email service
+  // Contact form: sends through Formspree (free). Paste your form URL below.
+  const FORM_ENDPOINT = 'https://formspree.io/f/xkjozvln';
   const form = document.getElementById('contactForm');
   const formNote = document.getElementById('formNote');
-  form.addEventListener('submit', (e) => {
+  const setNote = (msg, type) => { formNote.textContent = msg; formNote.className = 'form-note ' + type; };
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const data = new FormData(form);
     const email = String(data.get('email') || '');
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!form.checkValidity() || !validEmail) {
-      formNote.textContent = 'Please fill every field with a valid email.';
-      formNote.className = 'form-note error';
+      setNote('Please fill every field with a valid email.', 'error');
       return;
     }
-    // No email backend is connected yet — wire this up to a service such as
-    // Formspree, EmailJS, or your own endpoint, then send `data` there.
-    formNote.textContent = 'Thanks! This form needs an email service connected to actually deliver messages — for now, please email me directly.';
-    formNote.className = 'form-note success';
-    form.reset();
+    if (FORM_ENDPOINT.includes('YOUR_FORM_ID')) {
+      setNote('The form is not connected yet. Please email me directly at abdelrahmanq57@gmail.com.', 'error');
+      return;
+    }
+    setNote('Sending...', '');
+    try {
+      const res = await fetch(FORM_ENDPOINT, { method: 'POST', body: data, headers: { 'Accept': 'application/json' } });
+      if (res.ok) { setNote('Thanks! Your message was sent.', 'success'); form.reset(); }
+      else { setNote('Something went wrong. Please email me directly.', 'error'); }
+    } catch (err) {
+      setNote('Network error. Please email me directly.', 'error');
+    }
   });
